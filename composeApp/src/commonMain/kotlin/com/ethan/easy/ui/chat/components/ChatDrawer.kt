@@ -1,5 +1,6 @@
 package com.ethan.easy.ui.chat.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,10 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -26,13 +29,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ethan.easy.data.database.SessionEntity
 
 /**
  * Navigation Drawer Content
  */
 @Composable
 fun ChatDrawer(
-    onNewChat: () -> Unit
+    sessions: List<SessionEntity>,
+    onNewChat: () -> Unit,
+    onSessionSelected: (String) -> Unit
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp)
@@ -62,19 +68,20 @@ fun ChatDrawer(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // History Groups (Mock)
-            Text("Today", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+            // History List
+            Text("History", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
             Spacer(modifier = Modifier.height(8.dp))
-            HistoryItem("Explain quantum physics")
-            HistoryItem("Recipe for carbonara")
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text("Yesterday", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-            Spacer(modifier = Modifier.height(8.dp))
-            HistoryItem("Debug Python script error")
-            
-            Spacer(modifier = Modifier.weight(1f))
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                items(sessions) { session ->
+                    HistoryItem(
+                        text = session.title,
+                        onClick = { onSessionSelected(session.id) }
+                    )
+                }
+            }
             
             // User Profile
             Row(
@@ -99,15 +106,16 @@ fun ChatDrawer(
 }
 
 @Composable
-private fun HistoryItem(text: String) {
+private fun HistoryItem(text: String, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp)
     ) {
         Icon(
-            Icons.AutoMirrored.Filled.Send, // Placeholder icon
+            Icons.AutoMirrored.Filled.Chat, 
             contentDescription = null, 
             modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.outline

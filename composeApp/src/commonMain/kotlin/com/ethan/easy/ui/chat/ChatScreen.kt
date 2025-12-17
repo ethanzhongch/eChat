@@ -1,5 +1,6 @@
 package com.ethan.easy.ui.chat
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,20 +13,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import com.ethan.easy.ui.chat.components.ChatDrawer
 import com.ethan.easy.ui.chat.components.ChatInput
 import com.ethan.easy.ui.chat.components.ChatTopBar
 import com.ethan.easy.ui.chat.components.EmptyChatView
 import com.ethan.easy.ui.chat.components.MessageListView
 import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.pointerInput
+import org.koin.compose.koinInject
 
 @Composable
 fun ChatScreen(
-    viewModel: ChatViewModel = viewModel { ChatViewModel() }
+    viewModel: ChatViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -37,8 +37,13 @@ fun ChatScreen(
         drawerState = drawerState,
         drawerContent = {
             ChatDrawer(
+                sessions = uiState.sessions,
                 onNewChat = {
                     viewModel.handleIntent(ChatIntent.CreateNewChat)
+                    scope.launch { drawerState.close() }
+                },
+                onSessionSelected = { sessionId ->
+                    viewModel.handleIntent(ChatIntent.LoadSession(sessionId))
                     scope.launch { drawerState.close() }
                 }
             )

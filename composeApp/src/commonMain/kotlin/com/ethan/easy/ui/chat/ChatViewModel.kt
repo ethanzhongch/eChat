@@ -1,27 +1,44 @@
 package com.ethan.easy.ui.chat
 
-import com.ethan.easy.util.PlatformTime
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.ethan.easy.data.repository.ChatRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
-// import kotlinx.datetime.Clock
-
-/**
- * ViewModel for the Chat Screen.
- * Handles business logic and state updates following MVI architecture.
- */
-class ChatViewModel : ViewModel() {
+class ChatViewModel(
+    private val repository: ChatRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    init {
+        // Observe messages from repository
+        viewModelScope.launch {
+            repository.messages.collect { entities ->
+                val chatMessages = entities.map { entity ->
+                    ChatMessage(
+                        id = entity.id,
+                        content = entity.content,
+                        isUser = entity.role == "user",
+                        timestamp = entity.timestamp
+                    )
+                }
+                _uiState.update { it.copy(messages = chatMessages) }
+            }
+        }
+
+        // Observe sessions for history
+        viewModelScope.launch {
+            repository.sessions.collect { sessions ->
+                 _uiState.update { it.copy(sessions = sessions) }
+            }
+        }
+    }
 
     fun handleIntent(intent: ChatIntent) {
         when (intent) {
@@ -33,7 +50,20 @@ class ChatViewModel : ViewModel() {
                 _uiState.update { it.copy(selectedModel = intent.model) }
             }
             is ChatIntent.CreateNewChat -> {
-                _uiState.update { it.copy(messages = emptyList(), inputText = "") }
+                repository.newChat()
+                _uiState.update { it.copy(inputText = "") }
+            }
+            is ChatIntent.LoadSession -> {
+                repository.loadSession(intent.sessionId)
+                
+                // Restore model from session if possible
+                val session = _uiState.value.sessions.find { it.id == intent.sessionId }
+                session?.let { s ->
+                   val model = ChatModel.entries.find { it.name == s.modelProvider }
+                   if (model != null) {
+                       _uiState.update { it.copy(selectedModel = model) }
+                   }
+                }
             }
         }
     }
@@ -41,37 +71,14 @@ class ChatViewModel : ViewModel() {
     private fun sendMessage() {
         val currentInput = _uiState.value.inputText
         if (currentInput.isBlank()) return
-        // Get the current Instant
-        val userMessage = ChatMessage(
-            id = Random.nextLong().toString(),
-            content = currentInput,
-            isUser = true,
-            timestamp = PlatformTime.getCurrentTimeMillis()
-        )
 
-        _uiState.update {
-            it.copy(
-                messages = it.messages + userMessage,
-                inputText = "",
-                isLoading = true
-            )
-        }
+        val currentModel = _uiState.value.selectedModel
 
-        // Mock AI Response
+        _uiState.update { it.copy(inputText = "", isLoading = true) }
+
         viewModelScope.launch {
-            delay(1500) // Simulate network delay
-            val aiMessage = ChatMessage(
-                id = Random.nextLong().toString(),
-                content = "This is a mock response from ${_uiState.value.selectedModel.displayName} to: \"$currentInput\"",
-                isUser = false,
-                timestamp = PlatformTime.getCurrentTimeMillis()
-            )
-            _uiState.update {
-                it.copy(
-                    messages = it.messages + aiMessage,
-                    isLoading = false
-                )
-            }
+            repository.sendMessage(currentInput, currentModel)
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 }

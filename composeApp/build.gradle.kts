@@ -23,13 +23,18 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            export(libs.androidx.lifecycle.viewmodel)
+            export(libs.androidx.lifecycle.runtimeCompose)
+            export(libs.androidx.room.runtime)
+            export(libs.androidx.sqlite.bundled)
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -38,12 +43,14 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+            api(libs.androidx.lifecycle.viewmodel)
+            api(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.datetime)
             implementation(compose.materialIconsExtended)
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.androidx.sqlite.bundled)
+            api(libs.androidx.room.runtime)
+            api(libs.androidx.sqlite.bundled)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
