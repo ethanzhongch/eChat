@@ -58,13 +58,18 @@ fun MessageListView(
 @Composable
 private fun MessageBubble(message: ChatMessage) {
     val isUser = message.isUser
+    val isSystem = message.role == "system"
     
     // Bubble Alignment
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = when {
+            isSystem -> Arrangement.Center
+            isUser -> Arrangement.End
+            else -> Arrangement.Start
+        }
     ) {
-        if (!isUser) {
+        if (!isUser && !isSystem) {
             // AI Avatar
             Surface(
                 modifier = Modifier
@@ -73,9 +78,8 @@ private fun MessageBubble(message: ChatMessage) {
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
-                // Placeholder for AI Icon
                 Icon(
-                    imageVector = Icons.Default.Person, // Replace with specific AI icon
+                    imageVector = Icons.Default.Person,
                     contentDescription = "AI",
                     modifier = Modifier.padding(4.dp),
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
@@ -85,15 +89,27 @@ private fun MessageBubble(message: ChatMessage) {
         
         // Message Content
         Surface(
-            shape = if (isUser) RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp) else RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp),
-            color = if (isUser) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, // User: Light BG, AI: Transparent/Gray
-            modifier = Modifier.widthIn(max = 300.dp)
+            shape = when {
+                isSystem -> RoundedCornerShape(8.dp)
+                isUser -> RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
+                else -> RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp)
+            },
+            color = when {
+                isSystem -> MaterialTheme.colorScheme.errorContainer
+                isUser -> MaterialTheme.colorScheme.primaryContainer
+                else -> Color.Transparent
+            },
+            modifier = Modifier.widthIn(max = if (isSystem) 340.dp else 300.dp)
         ) {
             Text(
                 text = message.content,
                 modifier = Modifier.padding(12.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                style = if (isSystem) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyLarge,
+                color = when {
+                    isSystem -> MaterialTheme.colorScheme.onErrorContainer
+                    isUser -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
             )
         }
     }

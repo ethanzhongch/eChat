@@ -1,5 +1,6 @@
 package com.ethan.easy.api.gemini
 
+import com.ethan.easy.api.LLMException
 import com.ethan.easy.api.LLMService
 import com.ethan.easy.data.database.MessageEntity
 import io.ktor.client.HttpClient
@@ -25,11 +26,18 @@ class GeminiService(
             contents = geminiContents
         )
         
-        val response: GeminiResponse = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$apiKey") {
+        val response: GeminiResponse = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=$apiKey") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
         
-        return response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "No response from Gemini"
+        // Handle API Error field
+        if (response.error != null) {
+            throw LLMException(
+                response.error.message ?: response.error.status ?: "Unknown Gemini error"
+            )
+        }
+
+        return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "No response from Gemini"
     }
 }

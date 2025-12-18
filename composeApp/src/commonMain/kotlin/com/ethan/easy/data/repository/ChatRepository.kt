@@ -1,5 +1,6 @@
 package com.ethan.easy.data.repository
 
+import com.ethan.easy.api.LLMException
 import com.ethan.easy.data.database.MessageDao
 import com.ethan.easy.data.database.MessageEntity
 import com.ethan.easy.data.database.SessionDao
@@ -80,8 +81,9 @@ class ChatRepository(
 
         // Real AI Response
         try {
-            // Fetch relevant context (history) for the API call
-            val history = messageDao.getMessagesForSession(currentSessionId).first()
+            // Fetch relevant context (history) for the API call - EXCLUDE system/error messages
+            val allMessages = messageDao.getMessagesForSession(currentSessionId).first()
+            val history = allMessages.filter { it.role == "user" || it.role == "assistant" }
             
             val service = llmFactory.getService(currentModel.name)
             val responseText = service.generateResponse(history)
@@ -97,11 +99,20 @@ class ChatRepository(
             )
             messageDao.insert(aiMsg)
         } catch (e: Exception) {
+            println("Error in sendMessage: ${e.message}")
+            // Display a safe, non-raw message to avoid leaking API keys often returned in error bodies
+            // TODO: Gemini's response may contain an API key; do not directly display the error message to the user.
+            val safeContent = if (e is LLMException) {
+                "The AI service returned an error."
+            } else {
+                "A network error occurred. Please check your internet connection."
+            }
+            
             val errorMsg = MessageEntity(
                 id = Random.nextLong().toString(),
                 sessionId = currentSessionId,
                 role = "system",
-                content = "Error: ${e.message ?: "Unknown network error"}",
+                content = safeContent,
                 timestamp = PlatformTime.getCurrentTimeMillis(),
                 status = "Error",
                 modelProvider = currentModel.name

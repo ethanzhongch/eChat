@@ -17,10 +17,18 @@ data class DeepSeekMessage(
 
 @Serializable
 data class DeepSeekResponse(
-    val choices: List<DeepSeekChoice>
+    val choices: List<DeepSeekChoice>? = null,
+    val error: DeepSeekError? = null
+)
+
+@Serializable
+data class DeepSeekError(
+    val message: String? = null,
+    val type: String? = null,
+    val code: String? = null
 )
 
 @Serializable
 data class DeepSeekChoice(
-    val message: DeepSeekMessage
+    val message: DeepSeekMessage? = null
 )

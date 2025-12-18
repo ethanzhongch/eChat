@@ -1,5 +1,6 @@
 package com.ethan.easy.api.openai
 
+import com.ethan.easy.api.LLMException
 import com.ethan.easy.api.LLMService
 import com.ethan.easy.data.database.MessageEntity
 import io.ktor.client.HttpClient
@@ -35,6 +36,10 @@ class OpenAIService(
             setBody(request)
         }.body()
         
-        return response.choices.firstOrNull()?.message?.content ?: "No response from OpenAI"
+        if (response.error != null) {
+            throw LLMException(response.error.message ?: "Unknown OpenAI error")
+        }
+        
+        return response.choices?.firstOrNull()?.message?.content ?: "No response from OpenAI"
     }
 }

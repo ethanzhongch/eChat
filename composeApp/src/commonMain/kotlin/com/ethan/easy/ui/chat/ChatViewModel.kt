@@ -43,6 +43,7 @@ class ChatViewModel(
                         id = entity.id,
                         content = entity.content,
                         isUser = entity.role == "user",
+                        role = entity.role,
                         timestamp = entity.timestamp
                     )
                 }

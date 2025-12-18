@@ -27,6 +27,7 @@ data class ChatMessage(
     val id: String,
     val content: String,
     val isUser: Boolean,
+    val role: String, // "user", "assistant", "system"
     val timestamp: Long
 )
 
