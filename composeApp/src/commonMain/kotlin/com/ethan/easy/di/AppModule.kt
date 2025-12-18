@@ -8,15 +8,12 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 import com.ethan.easy.api.LLMFactory
+import com.ethan.easy.data.repository.SettingsRepository
+import com.ethan.easy.ui.settings.SettingsViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-
-// TODO: Move to secure storage or User Settings
-const val OPENAI_KEY = "sk-placeholder"
-const val DEEPSEEK_KEY = "sk-placeholder"
-const val GEMINI_KEY = "placeholder"
 
 val appModule = module {
     includes(platformModule)
@@ -32,11 +29,13 @@ val appModule = module {
         }
     }
 
-    single { LLMFactory(get(), OPENAI_KEY, DEEPSEEK_KEY, GEMINI_KEY) }
+    singleOf(::SettingsRepository)
+    single { LLMFactory(get(), get()) }
 
     single { get<AppDatabase>().sessionDao() }
     single { get<AppDatabase>().messageDao() }
     
     single { ChatRepository(get(), get(), get()) }
-    factory { ChatViewModel(get()) }
+    factory { ChatViewModel(get(), get()) }
+    factory { SettingsViewModel(get()) }
 }

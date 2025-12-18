@@ -12,12 +12,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 
+import androidx.compose.material.icons.filled.Settings
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTopBar(
     title: String,
     onMenuClick: () -> Unit,
-    onNewChatClick: () -> Unit
+    onNewChatClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -32,6 +35,9 @@ fun ChatTopBar(
             }
         },
         actions = {
+            IconButton(onClick = onSettingsClick) {
+                Icon(Icons.Default.Settings, contentDescription = "Settings")
+            }
             IconButton(onClick = onNewChatClick) {
                 Icon(Icons.Default.Edit, contentDescription = "New Chat")
             }

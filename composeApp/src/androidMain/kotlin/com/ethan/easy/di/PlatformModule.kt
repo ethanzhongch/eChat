@@ -6,6 +6,8 @@ import com.ethan.easy.data.database.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
+import com.ethan.easy.data.storage.createDataStore
+import com.ethan.easy.data.storage.DATASTORE_FILE_NAME
 
 actual val platformModule = module {
     single<AppDatabase> {
@@ -19,4 +21,6 @@ actual val platformModule = module {
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
     }
+
+    single { createDataStore { androidContext().filesDir.resolve(DATASTORE_FILE_NAME).absolutePath } }
 }

@@ -18,7 +18,8 @@ data class ChatUiState(
     val sessions: List<SessionEntity> = emptyList(),
     val selectedModel: ChatModel = ChatModel.DeepSeek,
     val isLoading: Boolean = false,
-    val inputText: String = ""
+    val inputText: String = "",
+    val isKeyMissing: Boolean = false
 )
 
 @Immutable
@@ -38,6 +39,7 @@ sealed interface ChatIntent {
     data class SelectModel(val model: ChatModel) : ChatIntent
     data object CreateNewChat : ChatIntent
     data class LoadSession(val sessionId: String) : ChatIntent
+    data object ClearError : ChatIntent // Helper for UX
 }
 
 /**

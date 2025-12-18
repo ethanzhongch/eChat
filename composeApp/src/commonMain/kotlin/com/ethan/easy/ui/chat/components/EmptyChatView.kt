@@ -29,52 +29,55 @@ import kotlin.math.absoluteValue
  * State A: Empty / New Chat View
  * Contains the crucial Model Selector (Wheel Picker).
  */
+import androidx.compose.foundation.clickable
+
+/**
+ * State A: Empty / New Chat View
+ * Contains the crucial Model Selector (Wheel Picker).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EmptyChatView(
     selectedModel: ChatModel,
-    onModelSelected: (ChatModel) -> Unit
+    onModelSelected: (ChatModel) -> Unit,
+    isKeyMissing: Boolean,
+    onNavigateToSettings: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Model Selector Logic
-        // We use a VerticalPager to create a snapping wheel effect.
-        // The page size is small to show adjacent items.
+        // ... (Pager logic remains same)
         val models = ChatModel.entries
         val pagerState = rememberPagerState(
             initialPage = models.indexOf(selectedModel),
             pageCount = { models.size }
         )
 
-        // Sync pager state with selected model
         LaunchedEffect(pagerState.currentPage) {
             onModelSelected(models[pagerState.currentPage])
         }
-        
-        // OR: Sync external selection with pager (if needed, bi-directional)
+
         LaunchedEffect(selectedModel) {
             pagerState.animateScrollToPage(models.indexOf(selectedModel))
         }
 
         Box(
             modifier = Modifier
-                .height(150.dp) // Height of the visible picker area
+                .height(150.dp)
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             VerticalPager(
                 state = pagerState,
-                contentPadding = PaddingValues(vertical = 50.dp), // Padding to center the item
-                pageSize = PageSize.Fixed(50.dp), // Fixed height for each item
+                contentPadding = PaddingValues(vertical = 50.dp),
+                pageSize = PageSize.Fixed(50.dp),
                 beyondViewportPageCount = 2
             ) { page ->
                 val model = models[page]
                 val isSelected = pagerState.currentPage == page
                 
-                // Animation for scale and alpha based on distance from center
                 val pageOffset = (
                     (pagerState.currentPage - page) + pagerState
                         .currentPageOffsetFraction
@@ -94,27 +97,32 @@ fun EmptyChatView(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Logo would go here if we had resources
-                        // Icon(painter = painterResource(...), ...) 
-                        Text(
-                            text = model.displayName,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            ),
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = model.displayName,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = "How can I help you today?",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (isKeyMissing) {
+            Text(
+                text = "⚠️ API Key missing. Tap to configure.",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.clickable { onNavigateToSettings() }
+            )
+        } else {
+            Text(
+                text = "How can I help you today?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

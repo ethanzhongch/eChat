@@ -11,6 +11,8 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import com.ethan.easy.data.storage.createDataStore
+import com.ethan.easy.data.storage.DATASTORE_FILE_NAME
 
 actual val platformModule = module {
     single<AppDatabase> {
@@ -22,6 +24,8 @@ actual val platformModule = module {
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
     }
+
+    single { createDataStore { documentDirectory() + "/$DATASTORE_FILE_NAME" } }
 }
 
 @OptIn(ExperimentalForeignApi::class)

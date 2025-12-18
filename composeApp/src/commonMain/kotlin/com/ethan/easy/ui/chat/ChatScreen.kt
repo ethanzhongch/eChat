@@ -23,15 +23,34 @@ import com.ethan.easy.ui.chat.components.MessageListView
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.collectLatest
+
 @Composable
 fun ChatScreen(
+    onNavigateToSettings: () -> Unit,
     viewModel: ChatViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     val focusManager = LocalFocusManager.current
+
+    // Handle ViewModel effects (Snackbar)
+    LaunchedEffect(viewModel.effect) {
+        viewModel.effect.collectLatest { effect ->
+            when (effect) {
+                is ChatEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -55,11 +74,13 @@ fun ChatScreen(
                     focusManager.clearFocus()
                 })
             },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 ChatTopBar(
                     title = if (uiState.messages.isEmpty()) "New chat" else uiState.selectedModel.displayName,
                     onMenuClick = { scope.launch { drawerState.open() } },
-                    onNewChatClick = { viewModel.handleIntent(ChatIntent.CreateNewChat) }
+                    onNewChatClick = { viewModel.handleIntent(ChatIntent.CreateNewChat) },
+                    onSettingsClick = onNavigateToSettings
                 )
             },
             bottomBar = {
@@ -80,7 +101,9 @@ fun ChatScreen(
                 if (uiState.messages.isEmpty()) {
                     EmptyChatView(
                         selectedModel = uiState.selectedModel,
-                        onModelSelected = { viewModel.handleIntent(ChatIntent.SelectModel(it)) }
+                        onModelSelected = { viewModel.handleIntent(ChatIntent.SelectModel(it)) },
+                        isKeyMissing = uiState.isKeyMissing,
+                        onNavigateToSettings = onNavigateToSettings
                     )
                 } else {
                     MessageListView(
