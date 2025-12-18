@@ -17,9 +17,13 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
+import com.ethan.easy.api.LLMFactory
+import kotlinx.coroutines.flow.first
+
 class ChatRepository(
     private val sessionDao: SessionDao,
-    private val messageDao: MessageDao
+    private val messageDao: MessageDao,
+    private val llmFactory: LLMFactory
 ) {
     private val _activeSessionId = MutableStateFlow<String?>(null)
     val activeSessionId = _activeSessionId.asStateFlow()
@@ -74,17 +78,35 @@ class ChatRepository(
         )
         messageDao.insert(userMsg)
 
-        // Simulate AI Response
-        delay(1000)
-        val aiMsg = MessageEntity(
-            id = Random.nextLong().toString(),
-            sessionId = currentSessionId,
-            role = "ai",
-            content = "Echo: $text", // Mock response
-            timestamp = PlatformTime.getCurrentTimeMillis(),
-            status = "Sent",
-            modelProvider = currentModel.name
-        )
-        messageDao.insert(aiMsg)
+        // Real AI Response
+        try {
+            // Fetch relevant context (history) for the API call
+            val history = messageDao.getMessagesForSession(currentSessionId).first()
+            
+            val service = llmFactory.getService(currentModel.name)
+            val responseText = service.generateResponse(history)
+
+            val aiMsg = MessageEntity(
+                id = Random.nextLong().toString(),
+                sessionId = currentSessionId,
+                role = "assistant",
+                content = responseText,
+                timestamp = PlatformTime.getCurrentTimeMillis(),
+                status = "Sent",
+                modelProvider = currentModel.name
+            )
+            messageDao.insert(aiMsg)
+        } catch (e: Exception) {
+            val errorMsg = MessageEntity(
+                id = Random.nextLong().toString(),
+                sessionId = currentSessionId,
+                role = "system",
+                content = "Error: ${e.message ?: "Unknown network error"}",
+                timestamp = PlatformTime.getCurrentTimeMillis(),
+                status = "Error",
+                modelProvider = currentModel.name
+            )
+            messageDao.insert(errorMsg)
+        }
     }
 }
