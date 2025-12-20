@@ -23,7 +23,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ethan.easy.ui.chat.ChatMessage
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
 
 /**
  * State B: Active Chat View
@@ -59,6 +63,7 @@ fun MessageListView(
 private fun MessageBubble(message: ChatMessage) {
     val isUser = message.isUser
     val isSystem = message.role == "system"
+    val isAI = message.role == "assistant"
     
     // Bubble Alignment
     Row(
@@ -69,7 +74,7 @@ private fun MessageBubble(message: ChatMessage) {
             else -> Arrangement.Start
         }
     ) {
-        if (!isUser && !isSystem) {
+        if (isAI) {
             // AI Avatar
             Surface(
                 modifier = Modifier
@@ -101,16 +106,39 @@ private fun MessageBubble(message: ChatMessage) {
             },
             modifier = Modifier.widthIn(max = if (isSystem) 340.dp else 300.dp)
         ) {
-            Text(
-                text = message.content,
-                modifier = Modifier.padding(12.dp),
-                style = if (isSystem) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyLarge,
-                color = when {
-                    isSystem -> MaterialTheme.colorScheme.onErrorContainer
-                    isUser -> MaterialTheme.colorScheme.onPrimaryContainer
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-            )
+            if (isAI) {
+                // Markdown for AI Messages
+                Markdown(
+                    content = message.content,
+                    modifier = Modifier.padding(12.dp),
+                    colors = markdownColor(
+                        text = MaterialTheme.colorScheme.onSurface,
+                        codeBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    typography = markdownTypography(
+                        text = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                        code = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                )
+            } else {
+                // Standard Text for User and System Messages
+                Text(
+                    text = message.content,
+                    modifier = Modifier.padding(12.dp),
+                    style = if (isSystem) {
+                        MaterialTheme.typography.labelMedium 
+                    } else {
+                        MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp)
+                    },
+                    color = when {
+                        isSystem -> MaterialTheme.colorScheme.onErrorContainer
+                        isUser -> MaterialTheme.colorScheme.onPrimaryContainer
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
+                )
+            }
         }
     }
 }
