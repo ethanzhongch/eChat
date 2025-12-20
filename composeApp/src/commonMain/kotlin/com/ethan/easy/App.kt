@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ethan.easy.ui.theme.EChatTheme
 import com.ethan.easy.ui.chat.ChatScreen
 import com.ethan.easy.ui.settings.SettingsScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -17,7 +18,7 @@ enum class Screen {
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    EChatTheme {
         var currentScreen by remember { mutableStateOf(Screen.Chat) }
 
         when (currentScreen) {

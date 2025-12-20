@@ -19,7 +19,8 @@ data class ChatUiState(
     val selectedModel: ChatModel = ChatModel.DeepSeek,
     val isLoading: Boolean = false,
     val inputText: String = "",
-    val isKeyMissing: Boolean = false
+    val isKeyMissing: Boolean = false,
+    val selectedSessionId: String? = null
 )
 
 @Immutable

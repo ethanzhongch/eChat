@@ -1,32 +1,19 @@
 package com.ethan.easy.ui.chat
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import com.ethan.easy.ui.chat.components.ChatDrawer
-import com.ethan.easy.ui.chat.components.ChatInput
-import com.ethan.easy.ui.chat.components.ChatTopBar
-import com.ethan.easy.ui.chat.components.EmptyChatView
-import com.ethan.easy.ui.chat.components.MessageListView
+import androidx.compose.ui.unit.dp
+import com.ethan.easy.ui.chat.components.*
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -57,6 +44,7 @@ fun ChatScreen(
         drawerContent = {
             ChatDrawer(
                 sessions = uiState.sessions,
+                selectedSessionId = uiState.selectedSessionId,
                 onNewChat = {
                     viewModel.handleIntent(ChatIntent.CreateNewChat)
                     scope.launch { drawerState.close() }
@@ -83,21 +71,14 @@ fun ChatScreen(
                     onSettingsClick = onNavigateToSettings
                 )
             },
-            bottomBar = {
-                ChatInput(
-                    text = uiState.inputText,
-                    onTextChanged = { viewModel.handleIntent(ChatIntent.UpdateInput(it)) },
-                    onSendClick = { viewModel.handleIntent(ChatIntent.SendMessage) },
-                    isLoading = uiState.isLoading
-                )
-            }
+            containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(top = paddingValues.calculateTopPadding())
             ) {
-                // State Switching: Empty vs Active
+                // Main Content
                 if (uiState.messages.isEmpty()) {
                     EmptyChatView(
                         selectedModel = uiState.selectedModel,
@@ -109,6 +90,36 @@ fun ChatScreen(
                     MessageListView(
                         messages = uiState.messages,
                         modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                // Bottom Overlay: Gradient + Floating Input
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                ) {
+                    // Gradient Fade
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
+                                        MaterialTheme.colorScheme.background
+                                    )
+                                )
+                            )
+                    )
+                    
+                    ChatInput(
+                        text = uiState.inputText,
+                        onTextChanged = { viewModel.handleIntent(ChatIntent.UpdateInput(it)) },
+                        onSendClick = { viewModel.handleIntent(ChatIntent.SendMessage) },
+                        isLoading = uiState.isLoading
                     )
                 }
             }

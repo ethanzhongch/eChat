@@ -1,12 +1,7 @@
 package com.ethan.easy.ui.chat.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,13 +9,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,7 +35,6 @@ fun MessageListView(
 ) {
     val listState = rememberLazyListState()
 
-    // Auto-scroll to bottom on new message
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -49,9 +43,9 @@ fun MessageListView(
 
     LazyColumn(
         state = listState,
-        modifier = modifier.padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 140.dp, top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         items(messages, key = { it.id }) { message ->
             MessageBubble(message)
@@ -65,52 +59,45 @@ private fun MessageBubble(message: ChatMessage) {
     val isSystem = message.role == "system"
     val isAI = message.role == "assistant"
     
-    // Bubble Alignment
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = when {
-            isSystem -> Arrangement.Center
-            isUser -> Arrangement.End
-            else -> Arrangement.Start
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalAlignment = when {
+            isSystem -> Alignment.CenterHorizontally
+            isUser -> Alignment.End
+            else -> Alignment.Start
         }
     ) {
-        if (isAI) {
-            // AI Avatar
-            Surface(
-                modifier = Modifier
-                    .size(32.dp)
-                    .padding(end = 8.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "AI",
-                    modifier = Modifier.padding(4.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+        if (isSystem) {
+            SystemMessage(message.content)
+            return@Column
         }
-        
-        // Message Content
+
+        // Message Content Card
         Surface(
             shape = when {
-                isSystem -> RoundedCornerShape(8.dp)
-                isUser -> RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
-                else -> RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp)
+                isUser -> RoundedCornerShape(topStart = 20.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                else -> RoundedCornerShape(topStart = 4.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
             },
-            color = when {
-                isSystem -> MaterialTheme.colorScheme.errorContainer
-                isUser -> MaterialTheme.colorScheme.primaryContainer
-                else -> Color.Transparent
-            },
-            modifier = Modifier.widthIn(max = if (isSystem) 340.dp else 300.dp)
+            color = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+            border = BorderStroke(
+                width = 1.dp,
+                color = if (isUser) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+            ),
+            modifier = Modifier
+                .widthIn(max = 320.dp)
+                .shadow(
+                    elevation = if (isUser) 1.dp else 4.dp,
+                    shape = if (isUser) RoundedCornerShape(topStart = 20.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                            else RoundedCornerShape(topStart = 4.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 20.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.05f),
+                    spotColor = Color.Black.copy(alpha = 0.05f)
+                )
         ) {
             if (isAI) {
-                // Markdown for AI Messages
                 Markdown(
                     content = message.content,
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                     colors = markdownColor(
                         text = MaterialTheme.colorScheme.onSurface,
                         codeBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -123,22 +110,75 @@ private fun MessageBubble(message: ChatMessage) {
                     )
                 )
             } else {
-                // Standard Text for User and System Messages
                 Text(
                     text = message.content,
-                    modifier = Modifier.padding(12.dp),
-                    style = if (isSystem) {
-                        MaterialTheme.typography.labelMedium 
-                    } else {
-                        MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp)
-                    },
-                    color = when {
-                        isSystem -> MaterialTheme.colorScheme.onErrorContainer
-                        isUser -> MaterialTheme.colorScheme.onPrimaryContainer
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                    style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
+
+        if (isAI) {
+            AIAssistantActions()
+        }
+    }
+}
+
+@Composable
+private fun SystemMessage(content: String) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.errorContainer),
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ErrorOutline,
+                contentDescription = "Error",
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = content,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun AIAssistantActions() {
+    Row(
+        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ActionButton(Icons.Outlined.ThumbUp)
+        ActionButton(Icons.Outlined.ThumbDown)
+        VerticalDivider(modifier = Modifier.height(16.dp).padding(horizontal = 4.dp), thickness = 1.dp)
+        ActionButton(Icons.Outlined.ContentCopy)
+        ActionButton(Icons.Outlined.Autorenew)
+    }
+}
+
+@Composable
+private fun ActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    IconButton(
+        onClick = {},
+        modifier = Modifier.size(32.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+        )
     }
 }

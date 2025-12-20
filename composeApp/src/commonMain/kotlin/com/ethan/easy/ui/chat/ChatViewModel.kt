@@ -35,9 +35,10 @@ class ChatViewModel(
             combine(
                 repository.messages,
                 repository.sessions,
+                repository.activeSessionId,
                 settingsRepository.settings,
                 _uiState
-            ) { messages, sessions, settings, currentState ->
+            ) { messages, sessions, activeSessionId, settings, currentState ->
                 val chatMessages = messages.map { entity ->
                     ChatMessage(
                         id = entity.id,
@@ -58,6 +59,7 @@ class ChatViewModel(
                 currentState.copy(
                     messages = chatMessages,
                     sessions = sessions,
+                    selectedSessionId = activeSessionId,
                     isKeyMissing = keyMissing
                 )
             }.collect { updatedState ->
