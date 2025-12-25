@@ -50,5 +50,5 @@ sealed interface ChatIntent {
 enum class ChatModel(val displayName: String, val iconRes: String? = null) {
     Gemini("Gemini"),
     DeepSeek("DeepSeek"),
-    OpenAi("ChatGPT 4")
+    OpenAi("ChatGPT")
 }
